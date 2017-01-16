@@ -66,7 +66,6 @@ function respaceNodes(){
                 grid[col][row][depthRow].homeX = $(window).width() / columns * col + $(window).width() / columns * 0.5 - $(window).width() / 2;
                 grid[col][row][depthRow].homeY = $(window).height() / rows * row + $(window).height() / rows * 0.5  - $(window).height() / 2;
                 grid[col][row][depthRow].homeZ = depthRange / depthRows * depthRow + depthRange / depthRows * 0.5 - depthRange;
-
                 grid[col][row].x = grid[col][row][depthRow].homeX;
                 grid[col][row].y = grid[col][row][depthRow].homeY;
                 grid[col][row].z = grid[col][row][depthRow].homeZ;
@@ -313,13 +312,16 @@ function pulse(x, y, strength) {
 };
 
 function touchStarted() {
+    var canvasX = (mouseX - $(window).width() / 2) * 1.5;
+    var canvasY = (mouseY - $(window).height() / 2) * 1.5;
+
     //set pulse away from mouse click
     if (keyIsPressed && keyCode == 16) {
-        pulseBubbles.push(new PulseBubble(mouseX, mouseY, pulseBubbleRadius, pulseTypes.recurringPulse, recurringPulseBubbleColor));
-        recurringPulses.push(new RecurringPulse(mouseX, mouseY, pulseForceConstant));
+        pulseBubbles.push(new PulseBubble(canvasX, canvasY, pulseBubbleRadius, pulseTypes.recurringPulse, recurringPulseBubbleColor));
+        recurringPulses.push(new RecurringPulse(canvasX, canvasY, pulseForceConstant));
     } else {
-        pulseBubbles.push(new PulseBubble(mouseX, mouseY, pulseBubbleRadius, pulseTypes.singlePulse, pulseBubbleColor));
-        pulse(mouseX, mouseY, pulseForceConstant);
+        pulseBubbles.push(new PulseBubble(canvasX, canvasY, pulseBubbleRadius, pulseTypes.singlePulse, pulseBubbleColor));
+        pulse(canvasX, canvasY, pulseForceConstant);
     };
 };
 
