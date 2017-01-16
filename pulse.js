@@ -6,8 +6,8 @@ const rows = 10;
 const columns = 10;
 const depthRows = 10;
 const depthRange = 1000;
-const pulseForceConstant = 500;
-const pulseForceExponent = 1.2;
+const pulseForceConstant = 2000;
+const pulseForceExponent = 1;
 const attractionToHome = 0.1;
 const attractionExponent = 1;
 const terminalVelocity = 10;
@@ -18,7 +18,7 @@ const pulseFrequency = 50;
 const pulseBubbleRadius = 20;
 const pulseBubbleColor = 'rgba(255, 11, 140, 0.7)';
 const recurringPulseBubbleColor = 'rgba(0, 0, 0, 0.7)';
-const nodeColor = 'rgba(0, 0, 255, 0.5)';
+const nodeColor = 'rgba(255, 20, 100, 0.9)';
 const pulseTypes = {
     singlePulse : "singlePulse",
     recurringPulse : "recurringPulse"
@@ -91,7 +91,7 @@ function makeGrid(){
 function draw() {
     frameCount += 1;
     clear();
-    // background(backgroundColor);
+    background(backgroundColor);
     noStroke();
 
     // updatePulseBubbles();
