@@ -6,16 +6,16 @@ const rows = 10;
 const columns = 10;
 const depthRows = 10;
 const depthRange = 1000;
-const pulseForceConstant = 4000;
+const pulseForceConstant = 2000;
 const pulseForceExponent = 1;
-const attractionToHome = 0.1;
-const attractionExponent = 1;
-const terminalVelocity = 10;
+const attractionToHome = 0.05;
+const attractionExponent = 1.2;
+const terminalVelocity = 20;
 const dragStrength = 0.1;
 const recurringPulseFrequency = 1;
 const modes = ["grid", "space"];
 const pulseFrequency = 50;
-const defaultDepth = -500;
+const defaultDepth = 0;
 const pulseBubbleRadius = 10;
 const pulseBubbleColor = 'rgba(255, 11, 140, 0.7)';
 const recurringPulseBubbleColor = 'rgba(0, 0, 0, 0.7)';
@@ -26,6 +26,8 @@ const pulseTypes = {
 };
 
 var pulseBubbles = [];
+var activePulseBubble = null;
+var pulseBubblePreviews = [];
 var recurringBubbles = [];
 var activeModeIndex = 0;
 var grid;
@@ -100,9 +102,12 @@ function draw() {
     ambientMaterial(250);
 
     updatePulseBubbles();
-    // if (frameCount % pulseFrequency == 0) {
-    //     executeRecurringPulses();
-    // };
+    if (frameCount % pulseFrequency == 0) {
+        executeRecurringPulses();
+    };
+    if (activePulseBubble) {
+
+    };
     drawNodes();
 };
 
@@ -213,20 +218,24 @@ var Node = function(column, row, depthRow) {
     };
 };
 
-var RecurringPulse = function(x, y, strength) {
+var RecurringPulse = function(x, y, z, strength, bubble) {
     this.x = x;
     this.y = y;
+    this.z = z;
+    this.bubble = bubble;
     this.strength = strength;
     this.execute = function(){
-        pulse(this.x, this.y, this.strength);
+        pulse(this.x, this.y, this.z, this.strength);
+        this.bubble.radius = 20;
     };
 };
 
 var PulseBubble = function(x, y, z, radius, type) {
     this.alive = true;
+    this.released = false;
     this.x = x;
     this.y = y;
-    this.z = y;
+    this.z = z;
     this.opacity = 0.7;
     this.radius = radius;
     this.type = type;
@@ -234,21 +243,28 @@ var PulseBubble = function(x, y, z, radius, type) {
         var translateX = this.x;
         var translateY = this.y;
         var translateZ = this.z;
-        fill('rgba(43, 13, 255, ' + this.opacity + ')');
+        if (this.type == pulseTypes.singlePulse) {
+            fill('rgba(43, 13, 255, ' + this.opacity + ')');
+        } else {
+            fill('rgba(43, 255, 13, ' + this.opacity + ')');
+        }
         translate(translateX ,translateY ,translateZ);
         sphere(this.radius);
         translate(-1 * translateX, -1 * translateY, -1 * translateZ);
 
-        if (this.type == pulseTypes.singlePulse) {
-            this.radius += 10;
-            this.opacity -= 0.1;
-            if (this.opacity < 0.01) {
-                this.alive = false;
-            }
-        } else if (this.type == pulseTypes.recurringPulse) {
-            if (this.opacity > 0.01) {
-                this.opacity = 1;
-                this.radius = pulsebubbleRadius;
+        if (!this.released) {
+            this.z -= 10;
+        } else {
+            if (this.type == pulseTypes.singlePulse) {
+                this.radius += 10;
+                this.opacity -= 0.1;
+                if (this.opacity < 0.01) {
+                    this.alive = false;
+                }
+            } else if (this.type == pulseTypes.recurringPulse) {
+                if (this.radius > pulseBubbleRadius) {
+                    this.radius -= 1;
+                }
             };
         };
     };
@@ -323,24 +339,38 @@ function pulse(x, y, z, strength) {
     };
 };
 
-function touchEnded() {
-    console.log(touches);
+function touchStarted() {
     var canvasX = (mouseX - $(window).width() / 2) * 0.8;
     var canvasY = (mouseY - $(window).height() / 2) * 0.8;
-
-    //set pulse away from mouse click
+    //preview pulse location
+    var depth = defaultDepth;
+    var type = null;
     if (keyIsPressed && keyCode == 16) {
-        pulseBubbles.push(new PulseBubble(canvasX, canvasY, pulseBubbleRadius, pulseTypes.recurringPulse, recurringPulseBubbleColor));
-        recurringPulses.push(new RecurringPulse(canvasX, canvasY, pulseForceConstant));
+        type = pulseTypes.recurringPulse;
     } else {
-        let depth = defaultDepth;
-        pulseBubbles.push(new PulseBubble(canvasX, canvasY, depth, pulseBubbleRadius, pulseTypes.singlePulse));
-        pulse(canvasX, canvasY, depth, pulseForceConstant);
+        type = pulseTypes.singlePulse;
     };
+    activePulseBubble = new PulseBubble(canvasX, canvasY, depth, pulseBubbleRadius, type);
+    pulseBubbles.push(activePulseBubble);
+};
+
+function touchEnded() {
+    var canvasX = activePulseBubble.x;
+    var canvasY = activePulseBubble.y;
+    var canvasZ = activePulseBubble.z;
+
+    activePulseBubble.released = true;
+    //set pulse away from mouse click
+    if (activePulseBubble.type == pulseTypes.recurringPulse) {
+        recurringPulses.push(new RecurringPulse(canvasX, canvasY, canvasZ, pulseForceConstant, activePulseBubble));
+    } else {
+        pulse(canvasX, canvasY, canvasZ, pulseForceConstant);
+    };
+    activePulseBubble = null;
+
 };
 
 function keyPressed() {
-    console.log(touches);
     if (keyCode) {
         switch (keyCode) {
             case 32:
