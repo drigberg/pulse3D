@@ -1,12 +1,12 @@
 //----------global defaults
-const backgroundColor = "rgba(0, 0, 0, 0)";
+const backgroundColor = "rgba(0, 0, 0, 1)";
 const nodeSize = 3;
 const emptyVector = [0,0];
 const rows = 10;
 const columns = 10;
 const depthRows = 10;
 const depthRange = 1000;
-const pulseForceConstant = 2000;
+const pulseForceConstant = 4000;
 const pulseForceExponent = 1;
 const attractionToHome = 0.1;
 const attractionExponent = 1;
@@ -15,7 +15,8 @@ const dragStrength = 0.1;
 const recurringPulseFrequency = 1;
 const modes = ["grid", "space"];
 const pulseFrequency = 50;
-const pulseBubbleRadius = 20;
+const defaultDepth = -500;
+const pulseBubbleRadius = 10;
 const pulseBubbleColor = 'rgba(255, 11, 140, 0.7)';
 const recurringPulseBubbleColor = 'rgba(0, 0, 0, 0.7)';
 const nodeColor = 'rgba(255, 20, 100, 0.9)';
@@ -30,6 +31,8 @@ var activeModeIndex = 0;
 var grid;
 var recurringPulses = [];
 var frameCount = 0;
+
+var lightZ = -1000;
 
 
 
@@ -93,8 +96,10 @@ function draw() {
     clear();
     background(backgroundColor);
     noStroke();
+    pointLight(250, 250, 250, 500, 600, lightZ);
+    ambientMaterial(250);
 
-    // updatePulseBubbles();
+    updatePulseBubbles();
     // if (frameCount % pulseFrequency == 0) {
     //     executeRecurringPulses();
     // };
@@ -217,23 +222,33 @@ var RecurringPulse = function(x, y, strength) {
     };
 };
 
-var PulseBubble = function(x, y, radius, type, color) {
+var PulseBubble = function(x, y, z, radius, type) {
     this.alive = true;
     this.x = x;
     this.y = y;
+    this.z = y;
+    this.opacity = 0.7;
     this.radius = radius;
-    this.color = color;
     this.type = type;
     this.update = function(){
-        ellipse(this.x, this.y, this.radius, this.radius);
+        var translateX = this.x;
+        var translateY = this.y;
+        var translateZ = this.z;
+        fill('rgba(43, 13, 255, ' + this.opacity + ')');
+        translate(translateX ,translateY ,translateZ);
+        sphere(this.radius);
+        translate(-1 * translateX, -1 * translateY, -1 * translateZ);
+
         if (this.type == pulseTypes.singlePulse) {
-            this.radius -= 1;
-            if (this.radius < 1) {
+            this.radius += 10;
+            this.opacity -= 0.1;
+            if (this.opacity < 0.01) {
                 this.alive = false;
             }
         } else if (this.type == pulseTypes.recurringPulse) {
-            if (this.radius > 10) {
-                this.radius -= 1;
+            if (this.opacity > 0.01) {
+                this.opacity = 1;
+                this.radius = pulsebubbleRadius;
             };
         };
     };
@@ -263,7 +278,6 @@ function executeRecurringPulses(){
 
 function updatePulseBubbles(){
     for (var i = 0; i < pulseBubbles.length; i++) {
-        fill(pulseBubbles[i].color);
         pulseBubbles[i].update();
         if (!pulseBubbles[i].alive) {
             pulseBubbles.splice(i, 1);
@@ -271,16 +285,14 @@ function updatePulseBubbles(){
     };
 };
 
-function pulse(x, y, strength) {
+function pulse(x, y, z, strength) {
     //push all nodes away from pulse location
-    var z = -500;
     for (var col = 0; col < columns; col++){
         for (var row = 0; row < rows; row++){
             for (var depthRow = 0; depthRow < depthRows; depthRow++){
                 var node = grid[col][row][depthRow];
                 var distance = findDistance(x, y, z, node.x, node.y, node.z);
                 var force = strength / Math.pow(distance, pulseForceExponent);
-
                 var pulseUnitVector = findUnitVector(x, y, z, node.x, node.y, node.z);
                 var pulseNormalVector = convertUnitToNormalVector(pulseUnitVector, force);
 
@@ -311,21 +323,24 @@ function pulse(x, y, strength) {
     };
 };
 
-function touchStarted() {
-    var canvasX = (mouseX - $(window).width() / 2) * 1.5;
-    var canvasY = (mouseY - $(window).height() / 2) * 1.5;
+function touchEnded() {
+    console.log(touches);
+    var canvasX = (mouseX - $(window).width() / 2) * 0.8;
+    var canvasY = (mouseY - $(window).height() / 2) * 0.8;
 
     //set pulse away from mouse click
     if (keyIsPressed && keyCode == 16) {
         pulseBubbles.push(new PulseBubble(canvasX, canvasY, pulseBubbleRadius, pulseTypes.recurringPulse, recurringPulseBubbleColor));
         recurringPulses.push(new RecurringPulse(canvasX, canvasY, pulseForceConstant));
     } else {
-        pulseBubbles.push(new PulseBubble(canvasX, canvasY, pulseBubbleRadius, pulseTypes.singlePulse, pulseBubbleColor));
-        pulse(canvasX, canvasY, pulseForceConstant);
+        let depth = defaultDepth;
+        pulseBubbles.push(new PulseBubble(canvasX, canvasY, depth, pulseBubbleRadius, pulseTypes.singlePulse));
+        pulse(canvasX, canvasY, depth, pulseForceConstant);
     };
 };
 
 function keyPressed() {
+    console.log(touches);
     if (keyCode) {
         switch (keyCode) {
             case 32:
