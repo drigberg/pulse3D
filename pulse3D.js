@@ -33,8 +33,7 @@ var activeModeIndex = 0;
 var grid;
 var recurringPulses = [];
 var frameCount = 0;
-
-var lightZ = -1000;
+var lightZ = 1000;
 
 
 
@@ -98,8 +97,8 @@ function draw() {
     clear();
     background(backgroundColor);
     noStroke();
+    ambientLight(100);
     pointLight(250, 250, 250, 500, 600, lightZ);
-    ambientMaterial(250);
 
     updatePulseBubbles();
     if (frameCount % pulseFrequency == 0) {
@@ -108,6 +107,7 @@ function draw() {
     if (activePulseBubble) {
 
     };
+    specularMaterial(250, 100, 250);
     drawNodes();
 };
 
@@ -233,6 +233,7 @@ var RecurringPulse = function(x, y, z, strength, bubble) {
 var PulseBubble = function(x, y, z, radius, type) {
     this.alive = true;
     this.released = false;
+    this.dying = false;
     this.x = x;
     this.y = y;
     this.z = z;
@@ -244,21 +245,24 @@ var PulseBubble = function(x, y, z, radius, type) {
         var translateY = this.y;
         var translateZ = this.z;
         if (this.type == pulseTypes.singlePulse) {
-            fill('rgba(43, 13, 255, ' + this.opacity + ')');
+            specularMaterial(100, 250, 250);
         } else {
-            fill('rgba(43, 255, 13, ' + this.opacity + ')');
+            specularMaterial(250, 250, 100);
         }
-        translate(translateX ,translateY ,translateZ);
+        translate(translateX, translateY, translateZ);
         sphere(this.radius);
         translate(-1 * translateX, -1 * translateY, -1 * translateZ);
 
         if (!this.released) {
             this.z -= 10;
         } else {
+            if (!this.dying) {
+                this.radius = 20;
+            };
+            this.dying = true;
             if (this.type == pulseTypes.singlePulse) {
-                this.radius += 10;
-                this.opacity -= 0.1;
-                if (this.opacity < 0.01) {
+                this.radius -= 1;
+                if (this.radius < 1) {
                     this.alive = false;
                 }
             } else if (this.type == pulseTypes.recurringPulse) {
@@ -276,7 +280,7 @@ var PulseBubble = function(x, y, z, radius, type) {
 
 
 function drawNodes(){
-    fill(nodeColor);
+    // fill(nodeColor);
     for (var col = 0; col < columns; col++){
         for (var row = 0; row < rows; row++){
             for (var depthRow = 0; depthRow < depthRows; depthRow++){
